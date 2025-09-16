@@ -21,7 +21,7 @@ tag_diff() {
   local diff=$1
   local prNumber=$2
   local taggedDiff
-  
+
   taggedDiff=$(echo -e "$diff" | sed -E "/^(\+\+\+|\-\-\-)/ s|$|    # [PR: ${prNumber}]|")
 
   echo "$taggedDiff"
@@ -52,39 +52,7 @@ else
   read -rp "Enter the second PR URL: " prUrl2
 fi
 
-output1=$(validate_url_extract_info "$prUrl1")
-status=$?
-if [ $status -ne 0 ]; then
-  echo "$output1"
-  exit 1
-fi
-output2=$(validate_url_extract_info "$prUrl2")
-status=$?
-if [ $status -ne 0 ]; then
-  echo "$output2"
-  exit 1
-fi
-
-read -r owner1 repo1 pr1Number <<< "$output1"
-read -r owner2 repo2 pr2Number <<< "$output2"
-
-# Fetch PR diffs using gh CLI
-pr1Diff=$(gh pr diff "$pr1Number" -R "$owner1/$repo1")
-pr2Diff=$(gh pr diff "$pr2Number" -R "$owner2/$repo2")
-
-# Remove context lines from the diffs
-# it would be nice if https://cli.github.com/manual/gh_pr_diff
-# had an option to set the number of context lines so this step
-# wouldn't be necessary
-pr1NoCtxDiff=$(echo "$pr1Diff" | grep -v '^[^+-]')
-pr2NoCtxDiff=$(echo "$pr2Diff" | grep -v '^[^+-]')
-
-# Tag headers to make sure filenames always exist in the final diff
-pr1TaggedDiff=$(tag_diff "$pr1NoCtxDiff" "$pr1Number")
-pr2TaggedDiff=$(tag_diff "$pr2NoCtxDiff" "$pr2Number")
-
-# Generate diff and save to file
-diff_output=$(diff -u0 <(echo "$pr1TaggedDiff") <(echo "$pr2TaggedDiff") || true)
+diff_output=$(python main.py "$prUrl1" "$prUrl2")
 if [ -n "$output" ]; then
   echo "$diff_output" > "$output"
   echo "Diff saved to $output"

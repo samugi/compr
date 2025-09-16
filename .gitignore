@@ -24,3 +24,6 @@ temp/
 
 # Script output
 *.diff
+
+# Python pycache
+/__pycache__
